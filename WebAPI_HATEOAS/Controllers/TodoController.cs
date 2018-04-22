@@ -32,12 +32,36 @@ namespace WebAPI_HATEOAS.Controllers
         }
 
         [HttpGet("{id}.{format?}", Name = "GetTodo")]
-        public IActionResult GetById(long id)
+        public IActionResult GetById(long id, [FromHeader(Name = "Accept")]string accept)
         {
             var item = _context.TodoItems.FirstOrDefault(t => t.Id == id);
             if (item == null)
             {
                 return NotFound();
+            }
+
+            if (accept.EndsWith("hateoas"))
+            {
+                var link = new LinkHelper<TodoItem>(item);
+                link.Links.Add(new Link
+                {
+                    Href = Url.Link("GetTodo", new { item.Id }),
+                    Rel = "self",
+                    method = "GET"
+                });
+                link.Links.Add(new Link
+                {
+                    Href = Url.Link("PutTodo", new { item.Id }),
+                    Rel = "put-todo",
+                    method = "PUT"
+                });
+                link.Links.Add(new Link
+                {
+                    Href = Url.Link("DeleteTodo", new { item.Id }),
+                    Rel = "delete-todo",
+                    method = "DELETE"
+                });
+                return new ObjectResult(link);
             }
             return new ObjectResult(item);
         }
@@ -54,7 +78,7 @@ namespace WebAPI_HATEOAS.Controllers
         }
 
         // PUT: api/Todo/5
-        [HttpPut("{id}")]
+        [HttpPut("{id}", Name = "PutTodo")]
         public void Put(int id, [FromBody]TodoItem item)
         {
             if (item != null && item.Id != id)
@@ -72,7 +96,7 @@ namespace WebAPI_HATEOAS.Controllers
         }
 
         // DELETE: api/ApiWithActions/5
-        [HttpDelete("{id}")]
+        [HttpDelete("{id}", Name = "DeleteTodo")]
         public void Delete(int id)
         {
             var todo = _context.TodoItems.FirstOrDefault(t => t.Id == id);
