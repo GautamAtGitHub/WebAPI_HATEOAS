@@ -68,43 +68,55 @@ namespace WebAPI_HATEOAS.Controllers
 
         // POST: api/Todo
         [HttpPost]
-        public void Post([FromBody]TodoItem item)
+        public IActionResult Post([FromBody]TodoItem item)
         {
-            if (item != null)
+            if (item == null)
             {
-                _context.TodoItems.Add(item);
-                _context.SaveChanges();
+                return BadRequest();
             }
+
+            _context.TodoItems.Add(item);
+            _context.SaveChanges();
+
+            return CreatedAtRoute("GetTodo", new { id = item.Id }, item);
         }
 
         // PUT: api/Todo/5
         [HttpPut("{id}", Name = "PutTodo")]
-        public void Put(int id, [FromBody]TodoItem item)
+        public IActionResult Put(int id, [FromBody]TodoItem item)
         {
-            if (item != null && item.Id != id)
+            if (item == null || item.Id != id)
             {
-                var todo = _context.TodoItems.FirstOrDefault(t => t.Id == id);
-                if (todo != null)
-                {
-                    todo.IsComplete = item.IsComplete;
-                    todo.Name = item.Name;
-
-                    _context.TodoItems.Update(todo);
-                    _context.SaveChanges();
-                }
+                return BadRequest();
             }
+
+            var todo = _context.TodoItems.FirstOrDefault(t => t.Id == id);
+            if (todo == null)
+            {
+                return NotFound();
+            }
+
+            todo.IsComplete = item.IsComplete;
+            todo.Name = item.Name;
+
+            _context.TodoItems.Update(todo);
+            _context.SaveChanges();
+            return new NoContentResult();
         }
 
         // DELETE: api/ApiWithActions/5
         [HttpDelete("{id}", Name = "DeleteTodo")]
-        public void Delete(int id)
+        public IActionResult Delete(int id)
         {
             var todo = _context.TodoItems.FirstOrDefault(t => t.Id == id);
-            if (todo != null)
+            if (todo == null)
             {
-                _context.TodoItems.Remove(todo);
-                _context.SaveChanges();
+                return NotFound();
             }
+
+            _context.TodoItems.Remove(todo);
+            _context.SaveChanges();
+            return new NoContentResult();
         }
     }
 }
